@@ -5,7 +5,7 @@ from world import World
 import random
 from ast import literal_eval
 
-from util import Queue
+from util import Queue, Stack
 import random
 # Load world
 world = World()
@@ -13,10 +13,10 @@ world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
-map_file = "maps/test_cross.txt"
+# map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -31,30 +31,42 @@ player = Player(world.starting_room)
 # traversal_path = ['n', 'n']
 traversal_path = []
 
-def bft(self, starting_vertex):
+def bfs(starting_room, rooms):
+    # Create an empty queue and enqueue A PATH TO starting vertext ID
     queue = Queue()
-    queue.enqueue(starting_vertex)
+    queue.enqueue([starting_room])
     # Create an empty Set to store visited vertices
-    visited = {}
+    visited = set()
     # While the que is not empty..
     while queue.size() > 0:
-        # Deqeue the first vertex
-        vertex = queue.dequeue()
+        # Deqeue the first PATH
+        path = queue.dequeue()
+        room_id = path[-1]
+        # Grab last vertex from the PATH
         # If that vertex hasn't been visited..
-        if vertex not in visited:
+        if room_id not in visited:
+            if room_id not in rooms:
+                return path
             # Mark it as visited
-            # print(v)
-            visited.add(vertex)
-            # Then add all of its neighbors to the back of the queue
-            for neighbor in self.vertices[vertex]:
-                queue.enqueue(neighbor)
+            visited.add(room_id)
+            # Then add A PATH to its neighbors to the back of the queue
+            for direction in rooms[room_id]:
+                # COPY THE PATH
+                new_path = path.copy()
+                # APPEND THE NEIGHBOR TO THE BACK
+                new_path.append(rooms[room_id][direction])
+                queue.enqueue(new_path)
+    print("No new path")
+    return []
 
 rooms_visited = {}
-not_visited = set()
-prev_dir = None
+# """
 while len(rooms_visited) < len(room_graph):
+    # print(len(rooms_visited))
     if player.current_room.id not in rooms_visited:
         rooms_visited[player.current_room.id] = {}
+        if len(rooms_visited) == len(room_graph):
+            break
         current = rooms_visited[player.current_room.id]
         if player.current_room.n_to:
             current['n'] = player.current_room.n_to.id
@@ -62,32 +74,55 @@ while len(rooms_visited) < len(room_graph):
             current['s'] = player.current_room.s_to.id
         if player.current_room.w_to:
             current['w'] = player.current_room.w_to.id
-        if player.current_room.n_to:
+        if player.current_room.e_to:
             current['e'] = player.current_room.e_to.id
-        
+
     directions = []
-    if current['n']=='?' and prev_dir != 's':
-        directions.append('n')
-    if x > 0 and prev_dir != 'n':
-        directions.append('s')
-    if y > 0 and prev_dir != 'e':
-        directions.append('w')
-    if y < size_y - 1 and prev_dir != 'w':
-        directions.append('e')
+    for direction in current:
+        # If adjacent room.id not visited yet, add that direction
+        if current[direction] not in rooms_visited:
+            directions.append(direction)
+    
+    if len(rooms_visited) < 2:
+        directions = ['n']
+    elif len(rooms_visited) < 3:
+        directions = ['s']
+    # If all adjacent rooms have been visited
+    if len(directions) == 0:
+        # print(player.current_room.id)
+        # print(traversal_path)
+        # Find the path to the closest unexplored room
+        path = bfs(player.current_room.id, rooms_visited)
+        # print(path)
+        for room_id in path:
+            # print(room_id)
+            # print(current)
+            # print("exits", player.current_room.get_exits())
+            for direction in current:
+                if current[direction] == room_id:
+                    # print(direction)
+                    player.travel(direction)
+                    traversal_path.append(direction)
+                    break
+            # print(traversal_path)
+            if room_id in rooms_visited:
+                current = rooms_visited[room_id]
 
-    direction = random.choice(directions)    
-    prev_dir = direction
-    player.travel(direction)
-    traversal_path.append(direction)
-
+    else:
+        direction = random.choice(directions)
+        # print(direction)
+        player.travel(direction)
+        traversal_path.append(direction)
+# """
+print(traversal_path)
 # TRAVERSAL TEST
 visited_rooms = set()
 player.current_room = world.starting_room
 visited_rooms.add(player.current_room)
 
 for move in traversal_path:
-    print(player.current_room.get_exits())
-    print(player.current_room.n_to.id)
+    # print(player.current_room.get_exits())
+    # print(player.current_room.n_to.id)
     player.travel(move)
     visited_rooms.add(player.current_room)
 
