@@ -5,8 +5,6 @@ from world import World
 import random
 from ast import literal_eval
 
-from util import Queue, Stack
-import random
 # Load world
 world = World()
 
@@ -27,9 +25,18 @@ world.print_rooms()
 
 player = Player(world.starting_room)
 
-# Fill this out with directions to walk
-# traversal_path = ['n', 'n']
-traversal_path = []
+class Queue():
+    def __init__(self):
+        self.queue = []
+    def enqueue(self, value):
+        self.queue.append(value)
+    def dequeue(self):
+        if self.size() > 0:
+            return self.queue.pop(0)
+        else:
+            return None
+    def size(self):
+        return len(self.queue)
 
 def bfs(starting_room, rooms):
     # Create an empty queue and enqueue A PATH TO starting vertext ID
@@ -60,6 +67,7 @@ def bfs(starting_room, rooms):
     return []
 
 rooms_visited = {}
+traversal_path = []
 # """
 while len(rooms_visited) < len(room_graph):
     # print(len(rooms_visited))
